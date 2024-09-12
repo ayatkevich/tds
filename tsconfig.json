@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "strict": true,
     "checkJs": true,
     "target": "ESNext",
     "lib": ["ESNext"],

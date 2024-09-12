@@ -1,4 +1,4 @@
-import { Implementation, Program, ProgramToTransition, Trace } from './index';
+import { Implementation, Program, Trace } from './index';
 
 describe('TDS – Test-Driven State', () => {
   test('trace', () => {
@@ -17,14 +17,11 @@ describe('TDS – Test-Driven State', () => {
         .step('calc', { output: { n: 120 } }),
     ]);
 
-    type _1 = ProgramToTransition<typeof factorialProgram>;
-    type _2 = _1['from'];
-
     const factorialImplementation = new Implementation(factorialProgram) //
       .transition('*', '*', ({ n, a = 1 }) =>
         n === 0 //
-          ? { next: '@', output: { n: a } }
-          : { next: 'calc', output: { n: n - 1, a: n * a } }
+          ? ['@', { n: a }]
+          : ['calc', { n: n - 1, a: n * a }]
       );
   });
 });

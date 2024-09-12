@@ -1,12 +1,10 @@
+import type { UnionToIntersection } from 'type-fest';
 export interface StepOptions {
   output?: object;
 }
 
 export type AnyStep = Step<any, any>;
-export class Step<
-  const Name extends string,
-  const Options extends StepOptions,
-> {
+export class Step<const Name extends string, Options extends StepOptions> {
   constructor(
     public name: Name,
     public options: Options
@@ -17,13 +15,13 @@ export type AnyTrace = Trace<[...AnyStep[]]>;
 export class Trace<const Steps extends [] | [...AnyStep[]] = []> {
   constructor(public steps: Steps = [] as Steps) {}
 
-  static with<const Input extends object>(
+  static with<Input extends object>(
     output: Input
   ): Trace<[Step<'@', { output: Input }>]> {
     return new Trace([new Step('@', { output })]);
   }
 
-  step<const Name extends string, const Options extends StepOptions>(
+  step<const Name extends string, Options extends StepOptions>(
     name: Name,
     options: Options
   ): Trace<[...Steps, Step<Name, Options>]> {
@@ -64,11 +62,11 @@ export class Program<const Trace extends AnyTrace> {
 export type ProgramToTransition<T extends AnyProgram> =
   T extends Program<infer Trace> ? StepsToTransition<Trace['steps']> : never;
 
-type FromValue<Program extends AnyProgram> =
+export type FromState<Program extends AnyProgram> =
   | '*'
   | ProgramToTransition<Program>['from'];
 
-type ToValue<Program extends AnyProgram, From> =
+export type ToState<Program extends AnyProgram, From> =
   | '*'
   | (ProgramToTransition<Program> extends Transition<
       From extends '*' ? any : From,
@@ -79,15 +77,15 @@ type ToValue<Program extends AnyProgram, From> =
       ? To
       : never);
 
-type FnOutput<Program extends AnyProgram, From, To> =
+export type FnOutput<Program extends AnyProgram, From, To> =
   ProgramToTransition<Program> extends Transition<
     From extends '*' ? any : From,
     To extends '*' ? any : To,
     any,
     infer Output
   >
-    ? {
-        next:
+    ? [
+        (
           | '@'
           | (ProgramToTransition<Program> extends Transition<
               To extends '*' ? any : To,
@@ -96,29 +94,36 @@ type FnOutput<Program extends AnyProgram, From, To> =
               any
             >
               ? Next
-              : never);
-        output: Output;
-      }
+              : never)
+        ),
+        UnionToIntersection<Output>,
+      ]
     : never;
 
-type FnInput<Program extends AnyProgram, From, To> =
-  ProgramToTransition<Program> extends Transition<
-    From extends '*' ? any : From,
-    To extends '*' ? any : To,
-    infer Input,
-    infer Output
-  >
-    ? Input & Output
+export type FnInput<Program extends AnyProgram, From, To> = [From, To] extends [
+  '*',
+  '*',
+]
+  ? UnionToIntersection<ProgramToTransition<Program>['input']> &
+      UnionToIntersection<ProgramToTransition<Program>['output']>
+  : ProgramToTransition<Program> extends Transition<
+        From extends '*' ? any : From,
+        To extends '*' ? any : To,
+        infer Input,
+        any
+      >
+    ? UnionToIntersection<Input>
     : never;
 
 export class Implementation<const Program extends AnyProgram> {
   constructor(public program: Program) {}
 
   transition<
-    const From extends FromValue<Program>,
-    const To extends ToValue<Program, From>,
-    const Fn extends (
-      input: FnInput<Program, From, To>
-    ) => FnOutput<Program, From, To>,
-  >(from: From, to: To, fn: Fn) {}
+    const From extends FromState<Program>,
+    const To extends ToState<Program, From>,
+  >(
+    from: From,
+    to: To,
+    fn: (input: FnInput<Program, From, To>) => FnOutput<Program, From, To>
+  ) {}
 }
