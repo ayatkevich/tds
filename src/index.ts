@@ -133,8 +133,7 @@ export type FnOutput<Program extends AnyProgram, From, To> =
     : never;
 
 /** Represents the input of a transition function. */
-export type FnInput<Program extends AnyProgram, From, To> = /*
- */ [From, To] extends ["*", "*"]
+export type FnInput<Program extends AnyProgram, From, To> = [From, To] extends ["*", "*"]
   ? Simplify<
       UnionToIntersection<InferTransition<Program>["input"]> &
         UnionToIntersection<InferTransition<Program>["output"]>
@@ -195,4 +194,68 @@ export class Implementation<const Program extends AnyProgram> {
     }
     return output;
   }
+
+  async verify(program: Program = this.program) {
+    if (!program) throw new Error("Verify requires a program to verify against");
+
+    const report = [];
+
+    for (const trace of program.traces) {
+      let from = "@",
+        to,
+        input;
+      for (const step of trace.steps) {
+        if (from === "@" && step.name === "@") {
+          input = step.options.output;
+          continue;
+        }
+
+        to = step.name;
+        const transition = this.getTransition(from, to);
+        if (!transition) {
+          report.push({
+            kind: "fail",
+            trace,
+            step,
+            message: `No transition from ${from} to ${to}`,
+          } as const);
+          break;
+        }
+
+        const [next, output] = await transition.fn(input);
+        if (step.options.output && !deepEqual(output, step.options.output)) {
+          report.push({
+            kind: "fail",
+            trace,
+            step,
+            message: `Expected output ${toStableJson(step.options.output)}, got ${toStableJson(
+              output,
+            )}`,
+          } as const);
+          break;
+        }
+
+        [from, to] = [to, next];
+        input = output;
+
+        report.push({ kind: "pass", trace, step } as const);
+      }
+    }
+    return report;
+  }
+
+  async test(program: Program = this.program) {
+    const report = await this.verify(program);
+    if (!report.every((step) => step.kind === "pass")) throw new Error();
+  }
+}
+
+function toStableJson(object: any) {
+  const allKeys = new Set<string | number>();
+  JSON.stringify(object, (key, value) => (allKeys.add(key), value));
+  return JSON.stringify(object, Array.from(allKeys).sort());
+}
+
+function deepEqual(a: any, b: any) {
+  return toStableJson(a) === toStableJson(b);
 }
