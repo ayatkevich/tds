@@ -19,6 +19,8 @@ export type AnyStep = Step<any, any>;
  * Represents a single step in a trace.
  */
 export class Step<const Name extends string, Options extends StepOptions> {
+  tag = 'step' as const;
+
   constructor(
     public name: Name,
     public options: Options
@@ -34,6 +36,8 @@ export type AnyTrace = Trace<[...AnyStep[]]>;
  * Represents a sequence of steps in a trace.
  */
 export class Trace<const Steps extends [] | [...AnyStep[]] = []> {
+  tag = 'trace' as const;
+
   constructor(public steps: Steps = [] as Steps) {}
 
   static with<Input extends object>(
@@ -53,7 +57,8 @@ export class Trace<const Steps extends [] | [...AnyStep[]] = []> {
 /**
  * Represents a transition from one state to another, with input and output types attached.
  */
-export interface Transition<From, To, Input, Output> {
+export interface InferredTransition<From, To, Input, Output> {
+  tag: 'inferred transition';
   from: From;
   to: To;
   input: Input;
@@ -80,7 +85,7 @@ export type TraceToTransition<
     ? TraceToTransition<
         Rest,
         | Result
-        | Transition<
+        | InferredTransition<
             From['name'],
             To['name'],
             From['options']['output'],
@@ -99,6 +104,8 @@ export type AnyProgram = Program<AnyTrace>;
  * Represents a program that consists of multiple traces.
  */
 export class Program<const Trace extends AnyTrace> {
+  tag = 'program' as const;
+
   constructor(public traces: Trace[]) {}
 }
 
@@ -118,14 +125,12 @@ export type FromState<Program extends AnyProgram> =
 /**
  * Represents a union of state names that a program can transition to.
  */
-export type ToState<Program extends AnyProgram, From> =
+export type ToState<Program extends AnyProgram, From extends string> =
   | '*'
-  | (ProgramToTransition<Program> extends Transition<
-      From extends '*' ? any : From,
-      infer To,
-      any,
-      any
-    >
+  | (ProgramToTransition<Program> extends {
+      from: From extends '*' ? any : From;
+      to: infer To;
+    }
       ? To
       : never);
 
@@ -133,7 +138,7 @@ export type ToState<Program extends AnyProgram, From> =
  * Represents the output of a transition function.
  */
 export type FnOutput<Program extends AnyProgram, From, To> =
-  ProgramToTransition<Program> extends Transition<
+  ProgramToTransition<Program> extends InferredTransition<
     From extends '*' ? any : From,
     To extends '*' ? any : To,
     any,
@@ -142,7 +147,7 @@ export type FnOutput<Program extends AnyProgram, From, To> =
     ? [
         (
           | '@'
-          | (ProgramToTransition<Program> extends Transition<
+          | (ProgramToTransition<Program> extends InferredTransition<
               To extends '*' ? any : To,
               infer Next,
               any,
@@ -164,7 +169,7 @@ export type FnInput<Program extends AnyProgram, From, To> = [From, To] extends [
 ]
   ? UnionToIntersection<ProgramToTransition<Program>['input']> &
       UnionToIntersection<ProgramToTransition<Program>['output']>
-  : ProgramToTransition<Program> extends Transition<
+  : ProgramToTransition<Program> extends InferredTransition<
         From extends '*' ? any : From,
         To extends '*' ? any : To,
         infer Input,
@@ -173,11 +178,25 @@ export type FnInput<Program extends AnyProgram, From, To> = [From, To] extends [
     ? UnionToIntersection<Input>
     : never;
 
+export class Transition {
+  tag = 'transition' as const;
+  constructor(
+    public from: string,
+    public to: string,
+    public fn: (input: any) => any
+  ) {}
+}
+
 /**
  * Represents an implementation of a program.
  */
 export class Implementation<const Program extends AnyProgram> {
-  constructor(public program: Program) {}
+  tag = 'implementation' as const;
+
+  constructor(
+    public program: Program,
+    public transitions: Transition[] = []
+  ) {}
 
   transition<
     const From extends FromState<Program>,
@@ -186,5 +205,32 @@ export class Implementation<const Program extends AnyProgram> {
     from: From,
     to: To,
     fn: (input: FnInput<Program, From, To>) => FnOutput<Program, From, To>
-  ) {}
+  ) {
+    return new Implementation(
+      this.program,
+      this.transitions.concat(new Transition(from as string, to as string, fn))
+    );
+  }
+
+  findTransition(from: string, to: string): Transition {
+    const transition = this.transitions.find(
+      (transition) =>
+        (transition.from === '*' || transition.from === from) &&
+        (transition.to === '*' || transition.to === to)
+    );
+
+    if (!transition) throw new Error(`No transition from ${from} to ${to}`);
+
+    return transition;
+  }
+
+  async run<
+    const From extends FromState<Program>,
+    const To extends ToState<Program, From>,
+    Input extends FnInput<Program, From, To>,
+  >(from: From, to: To, input: Input) {
+    const transition = this.findTransition(from as string, to as string);
+
+    return await transition.fn(input);
+  }
 }

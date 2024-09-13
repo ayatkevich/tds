@@ -1,10 +1,10 @@
 import { Implementation, Program, Trace } from './index';
 
 describe('TDS – Test-Driven State', () => {
-  test('trace', () => {
+  test('factorial example', async () => {
     const factorialProgram = new Program([
       /**
-       * A factorial program can be represented as a union of three such traces:
+       * A factorial program can be represented as a union of three traces:
        */
 
       Trace.with({ n: 0 }) // reads as: for n = 0, the output is n = 1
@@ -30,5 +30,7 @@ describe('TDS – Test-Driven State', () => {
           ? ['@', { n: a }]
           : ['calc', { n: n - 1, a: n * a }]
       );
+
+    await factorialImplementation.run('@', 'calc', { n: 0 });
   });
 });
