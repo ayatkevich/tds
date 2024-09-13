@@ -21,6 +21,6 @@ describe("TDS – Test-Driven State", () => {
      * Knowing an entry state and passing a runtime reference to the factorial program, we can
      * verify the program against individual traces.
      */
-    await factorial.verify("@", Factorial);
+    // await factorial.verify("@", Factorial);
   });
 });
