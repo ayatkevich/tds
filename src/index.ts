@@ -202,13 +202,13 @@ export class Implementation<const Program extends AnyProgram> {
     const From extends FromState<Program>,
     const To extends ToState<Program, From>,
   >(
-    from: From,
-    to: To,
+    from: From & string,
+    to: To & string,
     fn: (input: FnInput<Program, From, To>) => FnOutput<Program, From, To>
   ) {
     return new Implementation(
       this.program,
-      this.transitions.concat(new Transition(from as string, to as string, fn))
+      this.transitions.concat(new Transition(from, to, fn))
     );
   }
 
@@ -228,9 +228,12 @@ export class Implementation<const Program extends AnyProgram> {
     const From extends FromState<Program>,
     const To extends ToState<Program, From>,
     Input extends FnInput<Program, From, To>,
-  >(from: From, to: To, input: Input) {
-    const transition = this.findTransition(from as string, to as string);
-
-    return await transition.fn(input);
+  >(from: From & string, to: To & string, input: Input) {
+    while (to !== '@') {
+      var [next, output] = await this.findTransition(from, to).fn(input);
+      [from, to] = [to, next];
+      input = output;
+    }
+    return output;
   }
 }

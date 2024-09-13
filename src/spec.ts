@@ -2,7 +2,7 @@ import { Implementation, Program, Trace } from './index';
 
 describe('TDS – Test-Driven State', () => {
   test('factorial example', async () => {
-    const factorialProgram = new Program([
+    const Factorial = new Program([
       /**
        * A factorial program can be represented as a union of three traces:
        */
@@ -23,7 +23,7 @@ describe('TDS – Test-Driven State', () => {
         .step('calc', { output: { n: 120 } }),
     ]);
 
-    const factorialImplementation = new Implementation(factorialProgram)
+    const factorial = new Implementation(Factorial)
       // reads as: from any state to any state
       .transition('*', '*', ({ n, a = 1 }) =>
         n === 0 //
@@ -31,6 +31,8 @@ describe('TDS – Test-Driven State', () => {
           : ['calc', { n: n - 1, a: n * a }]
       );
 
-    await factorialImplementation.run('@', 'calc', { n: 0 });
+    expect(await factorial.run('@', 'calc', { n: 0 })).toEqual({ n: 1 });
+    expect(await factorial.run('@', 'calc', { n: 1 })).toEqual({ n: 1 });
+    expect(await factorial.run('@', 'calc', { n: 5 })).toEqual({ n: 120 });
   });
 });
