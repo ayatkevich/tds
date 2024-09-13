@@ -1,9 +1,10 @@
-import type { Simplify, UnionToIntersection } from "type-fest";
+import type { Promisable, Simplify, UnionToIntersection } from "type-fest";
 
 /** Represents the options that can be attached to a step. */
 export interface StepOptions {
   /** The desired output of the transition to this step. */
   output?: object;
+  bypass?: boolean;
 }
 
 /** Represents any step in a trace. */
@@ -168,7 +169,7 @@ export class Implementation<const Program extends AnyProgram> {
   transition<const From extends FromState<Program>, const To extends ToState<Program, From>>(
     from: From & string,
     to: To & string,
-    fn: (input: FnInput<Program, From, To>) => FnOutput<Program, From, To>,
+    fn: (input: FnInput<Program, From, To>) => Promisable<FnOutput<Program, From, To>>,
   ) {
     return new Implementation(this.program, this.transitions.concat(new Transition(from, to, fn)));
   }
@@ -253,7 +254,7 @@ export class Implementation<const Program extends AnyProgram> {
 function toStableJson(object: any) {
   const allKeys = new Set<string | number>();
   JSON.stringify(object, (key, value) => (allKeys.add(key), value));
-  return JSON.stringify(object, Array.from(allKeys).sort());
+  return JSON.stringify(object, Array.from(allKeys).sort(), 2);
 }
 
 function deepEqual(a: any, b: any) {
