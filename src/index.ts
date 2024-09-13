@@ -1,4 +1,4 @@
-import type { UnionToIntersection } from 'type-fest';
+import type { Simplify, UnionToIntersection } from 'type-fest';
 
 /**
  * Represents the options that can be attached to a step.
@@ -77,12 +77,12 @@ export interface InferredTransition<From, To, Input, Output> {
  * - from one to two
  * - from two to three
  */
-export type TraceToTransition<
+export type TraceTransition<
   Steps extends AnyTrace['steps'],
   Result = never,
 > = Steps extends [infer From extends AnyStep, ...infer Rest]
   ? Rest extends [infer To extends AnyStep, ...any]
-    ? TraceToTransition<
+    ? TraceTransition<
         Rest,
         | Result
         | InferredTransition<
@@ -112,22 +112,22 @@ export class Program<const Trace extends AnyTrace> {
 /**
  * Converts a program to a union of transition pairs.
  */
-export type ProgramToTransition<T extends AnyProgram> =
-  T extends Program<infer Trace> ? TraceToTransition<Trace['steps']> : never;
+export type InferTransition<T extends AnyProgram> =
+  T extends Program<infer Trace> ? TraceTransition<Trace['steps']> : never;
 
 /**
  * Represents a union of state names that a program can transition from.
  */
 export type FromState<Program extends AnyProgram> =
   | '*'
-  | ProgramToTransition<Program>['from'];
+  | InferTransition<Program>['from'];
 
 /**
  * Represents a union of state names that a program can transition to.
  */
 export type ToState<Program extends AnyProgram, From extends string> =
   | '*'
-  | (ProgramToTransition<Program> extends {
+  | (InferTransition<Program> extends {
       from: From extends '*' ? any : From;
       to: infer To;
     }
@@ -138,7 +138,7 @@ export type ToState<Program extends AnyProgram, From extends string> =
  * Represents the output of a transition function.
  */
 export type FnOutput<Program extends AnyProgram, From, To> =
-  ProgramToTransition<Program> extends InferredTransition<
+  InferTransition<Program> extends InferredTransition<
     From extends '*' ? any : From,
     To extends '*' ? any : To,
     any,
@@ -147,7 +147,7 @@ export type FnOutput<Program extends AnyProgram, From, To> =
     ? [
         (
           | '@'
-          | (ProgramToTransition<Program> extends InferredTransition<
+          | (InferTransition<Program> extends InferredTransition<
               To extends '*' ? any : To,
               infer Next,
               any,
@@ -163,15 +163,15 @@ export type FnOutput<Program extends AnyProgram, From, To> =
 /**
  * Represents the input of a transition function.
  */
-export type FnInput<Program extends AnyProgram, From, To> = [From, To] extends [
-  '*',
-  '*',
-]
-  ? UnionToIntersection<ProgramToTransition<Program>['input']> &
-      UnionToIntersection<ProgramToTransition<Program>['output']>
-  : ProgramToTransition<Program> extends InferredTransition<
-        From extends '*' ? any : From,
-        To extends '*' ? any : To,
+export type FnInput<Program extends AnyProgram, From, To> = /*
+ */ [From, To] extends ['*', '*']
+  ? Simplify<
+      UnionToIntersection<InferTransition<Program>['input']> &
+        UnionToIntersection<InferTransition<Program>['output']>
+    >
+  : InferTransition<Program> extends InferredTransition<
+        [From] extends ['*'] ? any : From,
+        [To] extends ['*'] ? any : To,
         infer Input,
         any
       >
@@ -194,7 +194,7 @@ export class Implementation<const Program extends AnyProgram> {
   tag = 'implementation' as const;
 
   constructor(
-    public program: Program,
+    public program: Program = new Program([] as any) as Program,
     public transitions: Transition[] = []
   ) {}
 
@@ -225,10 +225,9 @@ export class Implementation<const Program extends AnyProgram> {
   }
 
   async run<
-    const From extends FromState<Program>,
-    const To extends ToState<Program, From>,
-    Input extends FnInput<Program, From, To>,
-  >(from: From & string, to: To & string, input: Input) {
+    const From extends InferTransition<Program>['from'],
+    const To extends InferTransition<Program>['to'],
+  >(from: From & string, to: To & string, input: any) {
     while (to !== '@') {
       var [next, output] = await this.findTransition(from, to).fn(input);
       [from, to] = [to, next];
