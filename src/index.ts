@@ -1,9 +1,23 @@
 import type { UnionToIntersection } from 'type-fest';
+
+/**
+ * Represents the options that can be attached to a step.
+ */
 export interface StepOptions {
+  /**
+   * The desired output of the transition to this step.
+   */
   output?: object;
 }
 
+/**
+ * Represents any step in a trace.
+ */
 export type AnyStep = Step<any, any>;
+
+/**
+ * Represents a single step in a trace.
+ */
 export class Step<const Name extends string, Options extends StepOptions> {
   constructor(
     public name: Name,
@@ -11,7 +25,14 @@ export class Step<const Name extends string, Options extends StepOptions> {
   ) {}
 }
 
+/**
+ * Represents a trace of any steps.
+ */
 export type AnyTrace = Trace<[...AnyStep[]]>;
+
+/**
+ * Represents a sequence of steps in a trace.
+ */
 export class Trace<const Steps extends [] | [...AnyStep[]] = []> {
   constructor(public steps: Steps = [] as Steps) {}
 
@@ -29,6 +50,9 @@ export class Trace<const Steps extends [] | [...AnyStep[]] = []> {
   }
 }
 
+/**
+ * Represents a transition from one state to another, with input and output types attached.
+ */
 export interface Transition<From, To, Input, Output> {
   from: From;
   to: To;
@@ -36,12 +60,24 @@ export interface Transition<From, To, Input, Output> {
   output: Output;
 }
 
-export type StepsToTransition<
+/**
+ * Distributes the list of individual steps into a union of transition pairs.
+ *
+ * So, for example, a list of steps:
+ * - one
+ * - two
+ * - three
+ *
+ * is transformed into a list of transitions:
+ * - from one to two
+ * - from two to three
+ */
+export type TraceToTransition<
   Steps extends AnyTrace['steps'],
   Result = never,
 > = Steps extends [infer From extends AnyStep, ...infer Rest]
   ? Rest extends [infer To extends AnyStep, ...any]
-    ? StepsToTransition<
+    ? TraceToTransition<
         Rest,
         | Result
         | Transition<
@@ -54,18 +90,34 @@ export type StepsToTransition<
     : Result
   : Result;
 
+/**
+ * Represents any program.
+ */
 export type AnyProgram = Program<AnyTrace>;
+
+/**
+ * Represents a program that consists of multiple traces.
+ */
 export class Program<const Trace extends AnyTrace> {
   constructor(public traces: Trace[]) {}
 }
 
+/**
+ * Converts a program to a union of transition pairs.
+ */
 export type ProgramToTransition<T extends AnyProgram> =
-  T extends Program<infer Trace> ? StepsToTransition<Trace['steps']> : never;
+  T extends Program<infer Trace> ? TraceToTransition<Trace['steps']> : never;
 
+/**
+ * Represents a union of state names that a program can transition from.
+ */
 export type FromState<Program extends AnyProgram> =
   | '*'
   | ProgramToTransition<Program>['from'];
 
+/**
+ * Represents a union of state names that a program can transition to.
+ */
 export type ToState<Program extends AnyProgram, From> =
   | '*'
   | (ProgramToTransition<Program> extends Transition<
@@ -77,6 +129,9 @@ export type ToState<Program extends AnyProgram, From> =
       ? To
       : never);
 
+/**
+ * Represents the output of a transition function.
+ */
 export type FnOutput<Program extends AnyProgram, From, To> =
   ProgramToTransition<Program> extends Transition<
     From extends '*' ? any : From,
@@ -100,6 +155,9 @@ export type FnOutput<Program extends AnyProgram, From, To> =
       ]
     : never;
 
+/**
+ * Represents the input of a transition function.
+ */
 export type FnInput<Program extends AnyProgram, From, To> = [From, To] extends [
   '*',
   '*',
@@ -115,6 +173,9 @@ export type FnInput<Program extends AnyProgram, From, To> = [From, To] extends [
     ? UnionToIntersection<Input>
     : never;
 
+/**
+ * Represents an implementation of a program.
+ */
 export class Implementation<const Program extends AnyProgram> {
   constructor(public program: Program) {}
 
