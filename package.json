@@ -1,7 +1,15 @@
 {
   "type": "module",
+  "private": false,
+  "name": "tds.ts",
+  "version": "0.1.0",
+  "author": "Alex Yatkevich",
+  "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
   "scripts": {
     "compile": "tsc",
     "test": "jest"
