@@ -12,7 +12,8 @@
   ],
   "scripts": {
     "compile": "tsc",
-    "test": "jest"
+    "test": "jest",
+    "prepublish": "npm run compile"
   },
   "dependencies": {
     "type-fest": "4.26.1"
