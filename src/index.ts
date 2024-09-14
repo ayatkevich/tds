@@ -228,7 +228,26 @@ export class Implementation<const Program extends AnyProgram> {
   /** Tests a program against its traces, throwing an error if any step fails. */
   async test(program: Program = this.program) {
     const report = await this.verify(program);
-    if (!report.every((step) => step.kind === "pass")) throw new Error();
+    if (!report.every((step) => step.kind === "pass")) {
+      this.transitions;
+      const message = [];
+      for (const trace of program.traces) {
+        message.push(`Trace:`);
+        for (const step of trace.steps) {
+          const record = report.find((its) => its.trace === trace && its.step === step);
+          if (step.name === "@") continue;
+          if (!record) {
+            message.push(`  ... ${step.name}`);
+            continue;
+          }
+          message.push(`  ${record.kind === "pass" ? "✅" : "❌"} ${step.name}`);
+          if (record.kind === "fail") message.push(`    ${record.message}`);
+        }
+      }
+
+      const newLocal = message.join("\n");
+      throw new Error(newLocal);
+    }
   }
 }
 
