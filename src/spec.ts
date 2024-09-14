@@ -94,4 +94,11 @@ describe("TDS – Test-Driven State", () => {
      */
     await fibonacci.test();
   });
+
+  test("side-effect example", async () => {
+    const SideEffect = new Program([
+      Trace.with({}) //
+        .step("calc"),
+    ]);
+  });
 });

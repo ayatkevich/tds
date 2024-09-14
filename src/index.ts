@@ -33,9 +33,9 @@ export class Trace<const Steps extends [] | [...AnyStep[]] = []> {
     return new Trace([new Step("@", { output })]);
   }
 
-  step<const Name extends string, Options extends StepOptions>(
+  step<const Name extends string, Options extends StepOptions = {}>(
     name: Name,
-    options: Options,
+    options: Options = {} as Options,
   ): Trace<[...Steps, Step<Name, Options>]> {
     return new Trace([...this.steps, new Step(name, options)]);
   }
