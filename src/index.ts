@@ -146,7 +146,7 @@ export class Implementation<const Program extends AnyProgram> {
     return new Implementation(this.program, this.transitions.concat(new Transition(from, to, fn)));
   }
 
-  getTransition(from: string, to: string) {
+  findTransition(from: string, to: string) {
     return this.transitions.find(
       (transition) =>
         (transition.from === "*" || transition.from === from) &&
@@ -159,7 +159,7 @@ export class Implementation<const Program extends AnyProgram> {
     const To extends ToState<InferTransitions<Program>, From>,
   >(from: From & string, to: To & string, input: any) {
     while (to !== "@") {
-      const transition = this.getTransition(from, to);
+      const transition = this.findTransition(from, to);
       if (!transition) throw new Error(`No transition from ${from} to ${to}`);
       var [next, output] = await transition.fn(input);
       [from, to] = [to as From & string, next];
@@ -184,7 +184,7 @@ export class Implementation<const Program extends AnyProgram> {
         }
 
         to = step.name;
-        const transition = this.getTransition(from, to);
+        const transition = this.findTransition(from, to);
         if (!transition) {
           report.push({
             kind: "fail",
