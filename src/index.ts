@@ -113,9 +113,7 @@ export type FnOutput<T, From, To> = [
 
 /** Represents the input of a transition function. */
 export type FnInput<T, From, To> = Simplify<
-  UnionToIntersection<
-    T extends InferredTransition<Any<From>, Any<To>, infer I, infer O> ? I & O : never
-  >
+  UnionToIntersection<T extends InferredTransition<Any<From>, Any<To>, infer I, any> ? I : never>
 >;
 
 export class Transition {
