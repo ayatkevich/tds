@@ -11,7 +11,7 @@ export interface StepOptions {
 export type AnyStep = Step<any, any>;
 
 /** Represents a single step in a trace. */
-export class Step<const Name extends string, Options extends StepOptions> {
+class Step<const Name extends string, Options extends StepOptions> {
   tag = "step" as const;
 
   constructor(
@@ -115,7 +115,7 @@ export type FnInput<T, From, To> = Simplify<
   UnionToIntersection<T extends InferredTransition<Any<From>, Any<To>, infer I, any> ? I : never>
 >;
 
-export class Transition {
+class Transition {
   tag = "transition" as const;
   constructor(
     public from: string,
@@ -129,7 +129,7 @@ export class Implementation<const Program extends AnyProgram> {
   tag = "implementation" as const;
 
   constructor(
-    public program: Program = new Program([] as any) as Program,
+    public program: Program = undefined as unknown as Program,
     public transitions: Transition[] = [],
   ) {}
 
@@ -236,7 +236,7 @@ export class Implementation<const Program extends AnyProgram> {
 function toStableJson(object: any) {
   const allKeys = new Set<string | number>();
   JSON.stringify(object, (key, value) => (allKeys.add(key), value));
-  return JSON.stringify(object, Array.from(allKeys).sort(), 2);
+  return JSON.stringify(object, Array.from(allKeys).sort());
 }
 
 /** Compares two values deeply, converting them to stable JSON strings. */

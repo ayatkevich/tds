@@ -94,7 +94,8 @@ describe("TDS – Test-Driven State", () => {
 
   test("bypassing side-effect-inducing code", async () => {
     const SideEffect = new Program([
-      Trace.with({}) //
+      new Trace() //
+        .step("@")
         .step("no side-effect")
         .step("side-effect", { bypass: true })
         .step("no side-effect"),
@@ -103,7 +104,7 @@ describe("TDS – Test-Driven State", () => {
     expect<
       IsEqual<
         InferTransitions<typeof SideEffect>,
-        | InferredTransition<"@", "no side-effect", {}, unknown>
+        | InferredTransition<"@", "no side-effect", unknown, unknown>
         | InferredTransition<"no side-effect", "side-effect", unknown, unknown>
         | InferredTransition<"side-effect", "no side-effect", unknown, unknown>
       >
@@ -130,5 +131,74 @@ describe("TDS – Test-Driven State", () => {
     expect(fromNothingToNoSideEffect).toHaveBeenCalledTimes(1);
     expect(fromNoSideEffectToSideEffect).toHaveBeenCalledTimes(0);
     expect(fromSideEffectToNoSideEffect).toHaveBeenCalledTimes(1);
+  });
+
+  describe("edge cases", () => {
+    test("no transition", async () => {
+      const NoTransition = new Program([
+        new Trace() //
+          .step("@")
+          .step("no transition"),
+      ]);
+
+      const noTransition = new Implementation(NoTransition);
+
+      await expect(noTransition.run("@", "no transition", {})).rejects.toThrow();
+    });
+
+    test("no program to verify against", async () => {
+      const noProgram = new Implementation();
+      await expect(noProgram.test()).rejects.toThrow();
+    });
+
+    test("no transition", async () => {
+      const NoTransition = new Program([
+        new Trace() //
+          .step("@")
+          .step("no transition"),
+      ]);
+
+      const noTransition = new Implementation(NoTransition);
+
+      expect(await noTransition.verify()).toEqual([
+        expect.objectContaining({
+          kind: "fail",
+          message: "No transition from @ to no transition",
+        }),
+      ]);
+    });
+
+    test('expected output "a" but got "b"', async () => {
+      const ExpectedOutput = new Program([
+        new Trace() //
+          .step("@")
+          .step("expected output", { output: { a: 1 } }),
+      ]);
+
+      const expectedOutput = new Implementation(ExpectedOutput) // @ts-expect-error
+        .transition("@", "expected output", async () => ["@", {}]);
+
+      expect(await expectedOutput.verify()).toEqual([
+        expect.objectContaining({
+          kind: "fail",
+          message: 'Expected output {"a":1}, got {}',
+        }),
+      ]);
+
+      await expect(expectedOutput.test()).rejects.toThrow();
+    });
+
+    test("last to bypass", async () => {
+      const LastToBypass = new Program([
+        new Trace() //
+          .step("@")
+          .step("last to bypass", { bypass: true }),
+      ]);
+
+      const lastToBypass = new Implementation(LastToBypass) //
+        .transition("@", "last to bypass", async () => ["@", {}]);
+
+      await lastToBypass.test();
+    });
   });
 });
