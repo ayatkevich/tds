@@ -98,52 +98,31 @@ export type InferTransition<T extends AnyProgram> =
 export type FromState<Program extends AnyProgram> = "*" | InferTransition<Program>["from"];
 
 /** Represents a union of state names that a program can transition to. */
-export type ToState<Program extends AnyProgram, From extends string> =
+export type ToState<T, From extends string> =
   | "*"
-  | (InferTransition<Program> extends (
-      {
-        from: From extends "*" ? any : From;
-        to: infer To;
-      }
-    ) ?
-      To
-    : never);
+  | (T extends { from: From extends "*" ? any : From; to: infer To } ? To : never);
 
 /** Represents the output of a transition function. */
-export type FnOutput<Program extends AnyProgram, From, To> =
-  InferTransition<Program> extends (
-    InferredTransition<From extends "*" ? any : From, To extends "*" ? any : To, any, infer Output>
+export type FnOutput<T, From, To> = [
+  "@" | (T extends { from: To extends "*" ? any : To; to: infer Next } ? Next : never),
+
+  T extends (
+    { from: From extends "*" ? any : From; to: To extends "*" ? any : To; output: infer O }
   ) ?
-    [
-      (
-        | "@"
-        | (InferTransition<Program> extends (
-            InferredTransition<To extends "*" ? any : To, infer Next, any, any>
-          ) ?
-            Next
-          : never)
-      ),
-      UnionToIntersection<Output>,
-    ]
-  : never;
+    O
+  : never,
+];
 
 /** Represents the input of a transition function. */
-export type FnInput<Program extends AnyProgram, From, To> =
-  [From, To] extends ["*", "*"] ?
-    Simplify<
-      UnionToIntersection<InferTransition<Program>["input"]> &
-        UnionToIntersection<InferTransition<Program>["output"]>
-    >
-  : InferTransition<Program> extends (
-    InferredTransition<
-      [From] extends ["*"] ? any : From,
-      [To] extends ["*"] ? any : To,
-      infer Input,
-      any
-    >
-  ) ?
-    UnionToIntersection<Input>
-  : never;
+export type FnInput<T extends InferredTransition<any, any, any, any>, From, To> = Simplify<
+  UnionToIntersection<
+    T extends (
+      InferredTransition<From extends "*" ? any : From, To extends "*" ? any : To, infer I, infer O>
+    ) ?
+      I & O
+    : never
+  >
+>;
 
 export class Transition {
   tag = "transition" as const;
@@ -163,10 +142,15 @@ export class Implementation<const Program extends AnyProgram> {
     public transitions: Transition[] = [],
   ) {}
 
-  transition<const From extends FromState<Program>, const To extends ToState<Program, From>>(
+  transition<
+    const From extends FromState<Program>,
+    const To extends ToState<InferTransition<Program>, From>,
+  >(
     from: From & string,
     to: To & string,
-    fn: (input: FnInput<Program, From, To>) => Promisable<FnOutput<Program, From, To>>,
+    fn: (
+      input: FnInput<InferTransition<Program>, From, To>,
+    ) => Promisable<FnOutput<InferTransition<Program>, From, To>>,
   ) {
     return new Implementation(this.program, this.transitions.concat(new Transition(from, to, fn)));
   }

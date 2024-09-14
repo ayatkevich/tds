@@ -1,4 +1,5 @@
-import { Implementation, Program, Trace } from "./index";
+import { IsEqual } from "type-fest";
+import { Implementation, InferredTransition, InferTransition, Program, Trace } from "./index";
 
 describe("TDS – Test-Driven State", () => {
   test("factorial example - indirect use", async () => {
@@ -94,7 +95,26 @@ describe("TDS – Test-Driven State", () => {
   test("side-effect example", async () => {
     const SideEffect = new Program([
       Trace.with({}) //
-        .step("calculate"),
+        .step("no side-effect")
+        .step("side-effect"),
     ]);
+
+    expect<
+      IsEqual<
+        InferTransition<typeof SideEffect>,
+        | InferredTransition<"@", "no side-effect", {}, unknown>
+        | InferredTransition<"no side-effect", "side-effect", unknown, unknown>
+      >
+    >(true);
+
+    const sideEffect = new Implementation(SideEffect) //
+      .transition("@", "no side-effect", async () => {
+        return ["side-effect", {}];
+      })
+      .transition("no side-effect", "side-effect", async () => {
+        return ["@", {}];
+      });
+
+    await sideEffect.test();
   });
 });
