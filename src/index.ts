@@ -133,6 +133,7 @@ export class Implementation<const Program extends AnyProgram> {
     public transitions: Transition[] = [],
   ) {}
 
+  /** Adds a transition from one state to another, with a function that processes input. */
   transition<
     const From extends "*" | FromState<Program>,
     const To extends "*" | ToState<InferTransitions<Program>, From>,
@@ -146,6 +147,7 @@ export class Implementation<const Program extends AnyProgram> {
     return new Implementation(this.program, this.transitions.concat(new Transition(from, to, fn)));
   }
 
+  /** Finds a transition from one state to another. */
   findTransition(from: string, to: string) {
     return this.transitions.find(
       (transition) =>
@@ -154,6 +156,7 @@ export class Implementation<const Program extends AnyProgram> {
     );
   }
 
+  /** Runs a program from one state to another, with an initial input. */
   async run<
     const From extends InferTransitions<Program>["from"],
     const To extends ToState<InferTransitions<Program>, From>,
@@ -168,6 +171,7 @@ export class Implementation<const Program extends AnyProgram> {
     return output;
   }
 
+  /** Verifies a program against its traces, returning a report of each step. */
   async verify(program: Program = this.program) {
     if (!program) throw new Error("Verify requires a program to verify against");
 
@@ -217,18 +221,21 @@ export class Implementation<const Program extends AnyProgram> {
     return report;
   }
 
+  /** Tests a program against its traces, throwing an error if any step fails. */
   async test(program: Program = this.program) {
     const report = await this.verify(program);
     if (!report.every((step) => step.kind === "pass")) throw new Error();
   }
 }
 
+/** Converts an object to a stable JSON string, by sorting the keys. */
 function toStableJson(object: any) {
   const allKeys = new Set<string | number>();
   JSON.stringify(object, (key, value) => (allKeys.add(key), value));
   return JSON.stringify(object, Array.from(allKeys).sort(), 2);
 }
 
+/** Compares two values deeply, converting them to stable JSON strings. */
 function deepEqual(a: any, b: any) {
   return toStableJson(a) === toStableJson(b);
 }
