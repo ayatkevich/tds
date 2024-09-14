@@ -90,6 +90,9 @@ export class Program<const Trace extends AnyTrace> {
   constructor(public traces: Trace[]) {}
 }
 
+/** T in category of (*) */
+export type Any<T> = T extends "*" ? any : T;
+
 /** Converts a program to a union of transitions. */
 export type InferTransitions<T extends AnyProgram> =
   T extends Program<infer Trace> ? TraceTransition<Trace["steps"]> : never;
@@ -100,27 +103,18 @@ export type FromState<Program extends AnyProgram> = "*" | InferTransitions<Progr
 /** Represents a union of state names that a program can transition to. */
 export type ToState<T, From extends string> =
   | "*"
-  | (T extends { from: From extends "*" ? any : From; to: infer To } ? To : never);
+  | (T extends InferredTransition<Any<From>, infer To, any, any> ? To : never);
 
 /** Represents the output of a transition function. */
 export type FnOutput<T, From, To> = [
-  "@" | (T extends { from: To extends "*" ? any : To; to: infer Next } ? Next : never),
-
-  T extends (
-    { from: From extends "*" ? any : From; to: To extends "*" ? any : To; output: infer O }
-  ) ?
-    O
-  : never,
+  "@" | (T extends InferredTransition<Any<To>, infer Next, any, any> ? Next : never),
+  T extends InferredTransition<Any<From>, Any<To>, any, infer O> ? O : never,
 ];
 
 /** Represents the input of a transition function. */
-export type FnInput<T extends InferredTransition<any, any, any, any>, From, To> = Simplify<
+export type FnInput<T, From, To> = Simplify<
   UnionToIntersection<
-    T extends (
-      InferredTransition<From extends "*" ? any : From, To extends "*" ? any : To, infer I, infer O>
-    ) ?
-      I & O
-    : never
+    T extends InferredTransition<Any<From>, Any<To>, infer I, infer O> ? I & O : never
   >
 >;
 
