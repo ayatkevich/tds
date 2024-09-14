@@ -165,13 +165,13 @@ export class Implementation<const Program extends AnyProgram> {
 
   async run<
     const From extends InferTransition<Program>["from"],
-    const To extends InferTransition<Program>["to"],
+    const To extends Exclude<ToState<InferTransition<Program>, From>, "*">,
   >(from: From & string, to: To & string, input: any) {
     while (to !== "@") {
       const transition = this.getTransition(from, to);
       if (!transition) throw new Error(`No transition from ${from} to ${to}`);
       var [next, output] = await transition.fn(input);
-      [from, to] = [to, next];
+      [from, to] = [to as From & string, next];
       input = output;
     }
     return output;
