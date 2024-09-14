@@ -98,12 +98,11 @@ export type InferTransitions<T extends AnyProgram> =
   T extends Program<infer Trace> ? TraceTransition<Trace["steps"]> : never;
 
 /** Represents a union of state names that a program can transition from. */
-export type FromState<Program extends AnyProgram> = "*" | InferTransitions<Program>["from"];
+export type FromState<Program extends AnyProgram> = InferTransitions<Program>["from"];
 
 /** Represents a union of state names that a program can transition to. */
 export type ToState<T, From extends string> =
-  | "*"
-  | (T extends InferredTransition<Any<From>, infer To, any, any> ? To : never);
+  T extends InferredTransition<Any<From>, infer To, any, any> ? To : never;
 
 /** Represents the output of a transition function. */
 export type FnOutput<T, From, To> = [
@@ -135,8 +134,8 @@ export class Implementation<const Program extends AnyProgram> {
   ) {}
 
   transition<
-    const From extends FromState<Program>,
-    const To extends ToState<InferTransitions<Program>, From>,
+    const From extends "*" | FromState<Program>,
+    const To extends "*" | ToState<InferTransitions<Program>, From>,
   >(
     from: From & string,
     to: To & string,
@@ -157,7 +156,7 @@ export class Implementation<const Program extends AnyProgram> {
 
   async run<
     const From extends InferTransitions<Program>["from"],
-    const To extends Exclude<ToState<InferTransitions<Program>, From>, "*">,
+    const To extends ToState<InferTransitions<Program>, From>,
   >(from: From & string, to: To & string, input: any) {
     while (to !== "@") {
       const transition = this.getTransition(from, to);
