@@ -92,11 +92,12 @@ describe("TDS – Test-Driven State", () => {
     await fibonacci.test();
   });
 
-  test("side-effect example", async () => {
+  test("bypassing side-effect-inducing code", async () => {
     const SideEffect = new Program([
       Trace.with({}) //
         .step("no side-effect")
-        .step("side-effect"),
+        .step("side-effect", { bypass: true })
+        .step("no side-effect"),
     ]);
 
     expect<
@@ -104,17 +105,30 @@ describe("TDS – Test-Driven State", () => {
         InferTransitions<typeof SideEffect>,
         | InferredTransition<"@", "no side-effect", {}, unknown>
         | InferredTransition<"no side-effect", "side-effect", unknown, unknown>
+        | InferredTransition<"side-effect", "no side-effect", unknown, unknown>
       >
     >(true);
 
+    const fromNothingToNoSideEffect = jest.fn();
+    const fromNoSideEffectToSideEffect = jest.fn();
+    const fromSideEffectToNoSideEffect = jest.fn();
     const sideEffect = new Implementation(SideEffect) //
       .transition("@", "no side-effect", async () => {
+        fromNothingToNoSideEffect();
         return ["side-effect", {}];
       })
       .transition("no side-effect", "side-effect", async () => {
+        fromNoSideEffectToSideEffect();
+        return ["no side-effect", {}];
+      })
+      .transition("side-effect", "no side-effect", async () => {
+        fromSideEffectToNoSideEffect();
         return ["@", {}];
       });
 
     await sideEffect.test();
+    expect(fromNothingToNoSideEffect).toHaveBeenCalledTimes(1);
+    expect(fromNoSideEffectToSideEffect).toHaveBeenCalledTimes(0);
+    expect(fromSideEffectToNoSideEffect).toHaveBeenCalledTimes(1);
   });
 });

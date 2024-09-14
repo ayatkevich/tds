@@ -181,7 +181,7 @@ export class Implementation<const Program extends AnyProgram> {
       let from = "@",
         to,
         input;
-      for (const step of trace.steps) {
+      for (const [i, step] of Object.entries(trace.steps)) {
         if (from === "@" && step.name === "@") {
           input = step.options.output;
           continue;
@@ -199,17 +199,21 @@ export class Implementation<const Program extends AnyProgram> {
           break;
         }
 
-        const [next, output] = await transition.fn(input);
-        if (step.options.output && !deepEqual(output, step.options.output)) {
-          report.push({
-            kind: "fail",
-            trace,
-            step,
-            message: `Expected output ${toStableJson(step.options.output)}, got ${toStableJson(
-              output,
-            )}`,
-          } as const);
-          break;
+        if (!step.options.bypass) {
+          var [next, output] = await transition.fn(input);
+          if (step.options.output && !deepEqual(output, step.options.output)) {
+            report.push({
+              kind: "fail",
+              trace,
+              step,
+              message: `Expected output ${toStableJson(step.options.output)}, got ${toStableJson(
+                output,
+              )}`,
+            } as const);
+            break;
+          }
+        } else {
+          var [next, output] = [trace.steps[Number(i) + 1]?.name ?? "@", step.options.output];
         }
 
         [from, to] = [to, next];
