@@ -25,9 +25,7 @@ describe("TDS – Test-Driven State", () => {
     const factorial = new Implementation<typeof Factorial>()
       /** Reads as: from any state to any state. */
       .transition("*", "*", ({ n, a = 1 }) =>
-        n === 0 //
-          ? ["@", { n: a }]
-          : ["calc", { n: n - 1, a: n * a }],
+        n === 0 ? ["@", { n: a }] : ["calc", { n: n - 1, a: n * a }],
       );
 
     /** Knowing an initial transition, we should be able to run the whole program. */
@@ -78,11 +76,9 @@ describe("TDS – Test-Driven State", () => {
     const fibonacci = new Implementation(Fibonacci)
       /** Reads as: from any state to any state. */
       .transition("*", "*", async ({ n, a = 1, b = 0 }) =>
-        n === 0
-          ? ["@", { n: b }]
-          : n === 1
-            ? ["@", { n: a }]
-            : ["calc", { n: n - 1, a: a + b, b: a }],
+        n === 0 ? ["@", { n: b }]
+        : n === 1 ? ["@", { n: a }]
+        : ["calc", { n: n - 1, a: a + b, b: a }],
       );
 
     /** Knowing an initial transition, we should be able to run the whole program. */
