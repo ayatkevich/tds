@@ -1,5 +1,5 @@
 import { IsEqual } from "type-fest";
-import { Implementation, InferredTransition, InferTransition, Program, Trace } from "./index";
+import { Implementation, InferredTransition, InferTransitions, Program, Trace } from "./index";
 
 describe("TDS – Test-Driven State", () => {
   test("factorial example - indirect use", async () => {
@@ -101,7 +101,7 @@ describe("TDS – Test-Driven State", () => {
 
     expect<
       IsEqual<
-        InferTransition<typeof SideEffect>,
+        InferTransitions<typeof SideEffect>,
         | InferredTransition<"@", "no side-effect", {}, unknown>
         | InferredTransition<"no side-effect", "side-effect", unknown, unknown>
       >

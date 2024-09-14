@@ -51,7 +51,7 @@ export interface InferredTransition<From, To, Input, Output> {
 }
 
 /**
- * Distributes the list of individual steps into a union of transition pairs.
+ * Distributes the list of individual steps into a union of step pairs.
  *
  * So, for example, a list of steps:
  *
@@ -90,12 +90,12 @@ export class Program<const Trace extends AnyTrace> {
   constructor(public traces: Trace[]) {}
 }
 
-/** Converts a program to a union of transition pairs. */
-export type InferTransition<T extends AnyProgram> =
+/** Converts a program to a union of transitions. */
+export type InferTransitions<T extends AnyProgram> =
   T extends Program<infer Trace> ? TraceTransition<Trace["steps"]> : never;
 
 /** Represents a union of state names that a program can transition from. */
-export type FromState<Program extends AnyProgram> = "*" | InferTransition<Program>["from"];
+export type FromState<Program extends AnyProgram> = "*" | InferTransitions<Program>["from"];
 
 /** Represents a union of state names that a program can transition to. */
 export type ToState<T, From extends string> =
@@ -144,13 +144,13 @@ export class Implementation<const Program extends AnyProgram> {
 
   transition<
     const From extends FromState<Program>,
-    const To extends ToState<InferTransition<Program>, From>,
+    const To extends ToState<InferTransitions<Program>, From>,
   >(
     from: From & string,
     to: To & string,
     fn: (
-      input: FnInput<InferTransition<Program>, From, To>,
-    ) => Promisable<FnOutput<InferTransition<Program>, From, To>>,
+      input: FnInput<InferTransitions<Program>, From, To>,
+    ) => Promisable<FnOutput<InferTransitions<Program>, From, To>>,
   ) {
     return new Implementation(this.program, this.transitions.concat(new Transition(from, to, fn)));
   }
@@ -164,8 +164,8 @@ export class Implementation<const Program extends AnyProgram> {
   }
 
   async run<
-    const From extends InferTransition<Program>["from"],
-    const To extends Exclude<ToState<InferTransition<Program>, From>, "*">,
+    const From extends InferTransitions<Program>["from"],
+    const To extends Exclude<ToState<InferTransitions<Program>, From>, "*">,
   >(from: From & string, to: To & string, input: any) {
     while (to !== "@") {
       const transition = this.getTransition(from, to);
