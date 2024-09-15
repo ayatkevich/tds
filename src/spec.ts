@@ -116,15 +116,15 @@ describe("TDS – Test-Driven State", () => {
     const sideEffect = new Implementation(SideEffect) //
       .transition("@", "no side-effect", async () => {
         fromNothingToNoSideEffect();
-        return ["side-effect", {}];
+        return ["side-effect"];
       })
       .transition("no side-effect", "side-effect", async () => {
         fromNoSideEffectToSideEffect();
-        return ["no side-effect", {}];
+        return ["no side-effect"];
       })
       .transition("side-effect", "no side-effect", async () => {
         fromSideEffectToNoSideEffect();
-        return ["@", {}];
+        return ["@"];
       });
 
     await sideEffect.test();

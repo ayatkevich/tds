@@ -106,8 +106,8 @@ export type ToState<T, From extends string> =
 
 /** Represents the output of a transition function. */
 export type FnOutput<T, From, To> = [
-  "@" | (T extends InferredTransition<Any<To>, infer Next, any, any> ? Next : never),
-  T extends InferredTransition<Any<From>, Any<To>, any, infer O> ? O : never,
+  next: "@" | (T extends InferredTransition<Any<To>, infer Next, any, any> ? Next : never),
+  payload?: T extends InferredTransition<Any<From>, Any<To>, any, infer O> ? O : never,
 ];
 
 /** Represents the input of a transition function. */
