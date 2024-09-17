@@ -152,6 +152,14 @@ describe("TDS – Test-Driven State", () => {
         .step("x"),
     ]);
 
+    expect<
+      IsEqual<
+        InferTransitions<typeof X>,
+        | InferredTransition<"@", "x", unknown, unknown>
+        | InferredTransition<"x", "x", unknown, unknown>
+      >
+    >(true);
+
     const x = new Implementation(X) //
       .transition("*", "*", async () => {
         return ["x"];

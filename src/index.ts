@@ -102,9 +102,17 @@ export class Program<const Trace extends AnyTrace> {
 /** T in category of (*) */
 export type Any<T> = T extends "*" ? any : T;
 
+/** Filters out the call steps from a trace. */
+export type FilterSteps<Steps extends AnyTrace["steps"], Result extends [...AnyStep[]] = []> =
+  Steps extends [infer Step, ...infer Rest extends AnyTrace["steps"]] ?
+    Step extends AnyStep ?
+      FilterSteps<Rest, [...Result, Step]>
+    : FilterSteps<Rest, Result>
+  : Result;
+
 /** Converts a program to a union of transitions. */
 export type InferTransitions<T extends AnyProgram> =
-  T extends Program<infer Trace> ? TraceTransition<Trace["steps"]> : never;
+  T extends Program<infer Trace> ? TraceTransition<FilterSteps<Trace["steps"]>> : never;
 
 /** Represents a union of state names that a program can transition from. */
 export type FromState<Program extends AnyProgram> = InferTransitions<Program>["from"];
