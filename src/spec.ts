@@ -142,6 +142,25 @@ describe("TDS – Test-Driven State", () => {
     );
   });
 
+  test("execute arbitrary logic during the verification process", async () => {
+    const fn = jest.fn();
+    const X = new Program([
+      new Trace() //
+        .step("@")
+        .step("x")
+        .call(fn)
+        .step("x"),
+    ]);
+
+    const x = new Implementation(X) //
+      .transition("*", "*", async () => {
+        return ["x"];
+      });
+    await x.test();
+
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
   describe("edge cases", () => {
     test("no transition", async () => {
       const NoTransition = new Program([

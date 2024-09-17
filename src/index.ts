@@ -20,11 +20,16 @@ class Step<const Name extends string, Options extends StepOptions> {
   ) {}
 }
 
+class Call {
+  tag = "call" as const;
+  constructor(public fn: () => Promisable<void>) {}
+}
+
 /** Represents a trace of any steps. */
-export type AnyTrace = Trace<[...AnyStep[]]>;
+export type AnyTrace = Trace<[...(AnyStep | Call)[]]>;
 
 /** Represents a sequence of steps in a trace. */
-export class Trace<const Steps extends [] | [...AnyStep[]] = []> {
+export class Trace<const Steps extends [] | [...(AnyStep | Call)[]] = []> {
   tag = "trace" as const;
 
   constructor(public steps: Steps = [] as Steps) {}
@@ -38,6 +43,10 @@ export class Trace<const Steps extends [] | [...AnyStep[]] = []> {
     options: Options = {} as Options,
   ): Trace<[...Steps, Step<Name, Options>]> {
     return new Trace([...this.steps, new Step(name, options)]);
+  }
+
+  call(fn: () => Promisable<void>): Trace<[...Steps, Call]> {
+    return new Trace([...this.steps, new Call(fn)]);
   }
 }
 
@@ -183,6 +192,10 @@ export class Implementation<const Program extends AnyProgram> {
         to,
         input;
       for (const [i, step] of Object.entries(trace.steps)) {
+        if (step instanceof Call) {
+          await step.fn();
+          continue;
+        }
         if (from === "@" && step.name === "@") {
           input = step.options.output;
           continue;
@@ -214,7 +227,9 @@ export class Implementation<const Program extends AnyProgram> {
             break;
           }
         } else {
-          var [next, output] = [trace.steps[Number(i) + 1]?.name ?? "@", step.options.output];
+          var next =
+            trace.steps.slice(Number(i) + 1).find((step) => step instanceof Step)?.name ?? "@";
+          var output = step.options.output;
         }
 
         [from, to] = [to, next];
@@ -235,6 +250,7 @@ export class Implementation<const Program extends AnyProgram> {
       for (const trace of program.traces) {
         message.push(`Trace:`);
         for (const step of trace.steps) {
+          if (step instanceof Call) continue;
           const record = report.find((its) => its.trace === trace && its.step === step);
           if (step.name === "@") continue;
           if (!record) {
