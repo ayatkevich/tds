@@ -120,7 +120,7 @@ class Transition {
   constructor(
     public from: string,
     public to: string,
-    public fn: (input: any) => any,
+    public fn: (input: any, transition: { from: string; to: string }) => any,
   ) {}
 }
 
@@ -142,6 +142,7 @@ export class Implementation<const Program extends AnyProgram> {
     to: To & string,
     fn: (
       input: FnInput<InferTransitions<Program>, From, To>,
+      transition: { from: string; to: string },
     ) => Promisable<FnOutput<InferTransitions<Program>, From, To>>,
   ) {
     return new Implementation(this.program, this.transitions.concat(new Transition(from, to, fn)));
@@ -164,7 +165,7 @@ export class Implementation<const Program extends AnyProgram> {
     while (to !== "@") {
       const transition = this.findTransition(from, to);
       if (!transition) throw new Error(`No transition from ${from} to ${to}`);
-      var [next, output] = await transition.fn(input);
+      var [next, output] = await transition.fn(input, { from, to });
       [from, to] = [to as From & string, next];
       input = output;
     }
@@ -200,7 +201,7 @@ export class Implementation<const Program extends AnyProgram> {
         }
 
         if (!step.options.bypass) {
-          var [next, output] = await transition.fn(input);
+          var [next, output] = await transition.fn(input, { from, to });
           if (step.options.output && !deepEqual(output, step.options.output)) {
             report.push({
               kind: "fail",

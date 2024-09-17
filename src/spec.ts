@@ -97,7 +97,7 @@ describe("TDS – Test-Driven State", () => {
       new Trace() //
         .step("@")
         .step("no side-effect")
-        .step("side-effect", { bypass: true })
+        .step("side-effect", { bypass: true, output: { a: 1 } })
         .step("no side-effect"),
     ]);
 
@@ -105,8 +105,8 @@ describe("TDS – Test-Driven State", () => {
       IsEqual<
         InferTransitions<typeof SideEffect>,
         | InferredTransition<"@", "no side-effect", unknown, unknown>
-        | InferredTransition<"no side-effect", "side-effect", unknown, unknown>
-        | InferredTransition<"side-effect", "no side-effect", unknown, unknown>
+        | InferredTransition<"no side-effect", "side-effect", unknown, { a: number }>
+        | InferredTransition<"side-effect", "no side-effect", { a: number }, unknown>
       >
     >(true);
 
@@ -114,16 +114,16 @@ describe("TDS – Test-Driven State", () => {
     const fromNoSideEffectToSideEffect = jest.fn();
     const fromSideEffectToNoSideEffect = jest.fn();
     const sideEffect = new Implementation(SideEffect) //
-      .transition("@", "no side-effect", async () => {
-        fromNothingToNoSideEffect();
+      .transition("@", "no side-effect", async (value, transition) => {
+        fromNothingToNoSideEffect(value, transition);
         return ["side-effect"];
       })
-      .transition("no side-effect", "side-effect", async () => {
-        fromNoSideEffectToSideEffect();
+      .transition("no side-effect", "side-effect", async (value, transition) => {
+        fromNoSideEffectToSideEffect(value, transition);
         return ["no side-effect"];
       })
-      .transition("side-effect", "no side-effect", async () => {
-        fromSideEffectToNoSideEffect();
+      .transition("side-effect", "no side-effect", async (value, transition) => {
+        fromSideEffectToNoSideEffect(value, transition);
         return ["@"];
       });
 
@@ -131,6 +131,15 @@ describe("TDS – Test-Driven State", () => {
     expect(fromNothingToNoSideEffect).toHaveBeenCalledTimes(1);
     expect(fromNoSideEffectToSideEffect).toHaveBeenCalledTimes(0);
     expect(fromSideEffectToNoSideEffect).toHaveBeenCalledTimes(1);
+
+    expect(fromNothingToNoSideEffect).toHaveBeenCalledWith(undefined, {
+      from: "@",
+      to: "no side-effect",
+    });
+    expect(fromSideEffectToNoSideEffect).toHaveBeenCalledWith(
+      { a: 1 },
+      { from: "side-effect", to: "no side-effect" },
+    );
   });
 
   describe("edge cases", () => {
