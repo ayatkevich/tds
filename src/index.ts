@@ -22,7 +22,7 @@ class Step<const Name extends string, Options extends StepOptions> {
 
 class Call {
   tag = "call" as const;
-  constructor(public fn: () => Promisable<void>) {}
+  constructor(public fn: () => Promisable<any>) {}
 }
 
 /** Represents a trace of any steps. */
@@ -45,7 +45,7 @@ export class Trace<const Steps extends [] | [...(AnyStep | Call)[]] = []> {
     return new Trace([...this.steps, new Step(name, options)]);
   }
 
-  call(fn: () => Promisable<void>): Trace<[...Steps, Call]> {
+  call(fn: () => Promisable<any>): Trace<[...Steps, Call]> {
     return new Trace([...this.steps, new Call(fn)]);
   }
 }
