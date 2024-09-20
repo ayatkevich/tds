@@ -262,10 +262,10 @@ export class Implementation<const Program extends AnyProgram> {
           const record = report.find((its) => its.trace === trace && its.step === step);
           if (step.name === "@") continue;
           if (!record) {
-            message.push(`  ... ${step.name}`);
+            message.push(`  ⬜ ${step.name}`);
             continue;
           }
-          message.push(`  ${record.kind === "pass" ? "✅" : "❌"} ${step.name}`);
+          message.push(`  ${record.kind === "pass" ? "🟩" : "🟥"} ${step.name}`);
           if (record.kind === "fail") message.push(`    ${record.message}`);
         }
       }

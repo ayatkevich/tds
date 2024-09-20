@@ -2,7 +2,7 @@
   "type": "module",
   "private": false,
   "name": "tds.ts",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "author": "Alex Yatkevich",
   "license": "MIT",
   "main": "dist/index.js",
