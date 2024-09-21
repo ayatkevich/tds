@@ -32,21 +32,27 @@ export type AnyTrace = Trace<[...(AnyStep | Call)[]]>;
 export class Trace<const Steps extends [] | [...(AnyStep | Call)[]] = []> {
   tag = "trace" as const;
 
-  constructor(public steps: Steps = [] as Steps) {}
+  constructor(
+    public name: string,
+    public steps: Steps = [] as Steps,
+  ) {}
 
-  static with<Input extends object>(output: Input): Trace<[Step<"@", { output: Input }>]> {
-    return new Trace([new Step("@", { output })]);
+  static with<Input extends object>(
+    name: string,
+    output: Input,
+  ): Trace<[Step<"@", { output: Input }>]> {
+    return new Trace(name, [new Step("@", { output })]);
   }
 
   step<const Name extends string, Options extends StepOptions = {}>(
     name: Name,
     options: Options = {} as Options,
   ): Trace<[...Steps, Step<Name, Options>]> {
-    return new Trace([...this.steps, new Step(name, options)]);
+    return new Trace(this.name, [...this.steps, new Step(name, options)]);
   }
 
   call(fn: () => Promisable<any>): Trace<[...Steps, Call]> {
-    return new Trace([...this.steps, new Call(fn)]);
+    return new Trace(this.name, [...this.steps, new Call(fn)]);
   }
 }
 
@@ -254,9 +260,9 @@ export class Implementation<const Program extends AnyProgram> {
     const report = await this.verify(program);
     if (!report.every((step) => step.kind === "pass")) {
       this.transitions;
-      const message = [];
+      const message = [""];
       for (const trace of program.traces) {
-        message.push(`Trace:`);
+        message.push(`Trace: ${trace.name}`);
         for (const step of trace.steps) {
           if (step instanceof Call) continue;
           const record = report.find((its) => its.trace === trace && its.step === step);
@@ -270,8 +276,7 @@ export class Implementation<const Program extends AnyProgram> {
         }
       }
 
-      const newLocal = message.join("\n");
-      throw new Error(newLocal);
+      throw new Error(message.join("\n"));
     }
   }
 }

@@ -6,14 +6,14 @@ describe("TDS – Test-Driven State", () => {
     const Factorial = new Program([
       /** A factorial program can be represented as a union of three traces: */
 
-      Trace.with({ n: 0 }) // reads as: for n = 0, the output is n = 1
+      Trace.with("n = 0", { n: 0 }) // reads as: for n = 0, the output is n = 1
         .step("calculate", { output: { n: 1 } }),
 
-      Trace.with({ n: 1 }) // reads as: for n = 1, the output is n = 1 after one step
+      Trace.with("n = 1", { n: 1 }) // reads as: for n = 1, the output is n = 1 after one step
         .step("calculate", { output: { n: 0, a: 1 } })
         .step("calculate", { output: { n: 1 } }),
 
-      Trace.with({ n: 5 }) // reads as: for n = 5, the output is n = 120 after five steps
+      Trace.with("n = 5", { n: 5 }) // reads as: for n = 5, the output is n = 120 after five steps
         .step("calculate", { output: { n: 4, a: 5 } })
         .step("calculate", { output: { n: 3, a: 20 } })
         .step("calculate", { output: { n: 2, a: 60 } })
@@ -43,24 +43,24 @@ describe("TDS – Test-Driven State", () => {
 
   test("fibonacci example - direct use", async () => {
     const Fibonacci = new Program([
-      Trace.with({ n: 0 }) //
+      Trace.with("n = 0", { n: 0 }) //
         .step("calculate", { output: { n: 0 } }),
 
-      Trace.with({ n: 1 }) //
+      Trace.with("n = 1", { n: 1 }) //
         .step("calculate", { output: { n: 1 } }),
 
-      Trace.with({ n: 2 }) //
+      Trace.with("n = 2", { n: 2 }) //
         .step("calculate", { output: { n: 1, a: 1, b: 1 } })
         .step("calculate", { output: { n: 1 } }),
 
-      Trace.with({ n: 5 }) //
+      Trace.with("n = 5", { n: 5 }) //
         .step("calculate", { output: { n: 4, a: 1, b: 1 } })
         .step("calculate", { output: { n: 3, a: 2, b: 1 } })
         .step("calculate", { output: { n: 2, a: 3, b: 2 } })
         .step("calculate", { output: { n: 1, a: 5, b: 3 } })
         .step("calculate", { output: { n: 5 } }),
 
-      Trace.with({ n: 10 }) //
+      Trace.with("n = 10", { n: 10 }) //
         .step("calculate", { output: { n: 9, a: 1, b: 1 } })
         .step("calculate", { output: { n: 8, a: 2, b: 1 } })
         .step("calculate", { output: { n: 7, a: 3, b: 2 } })
@@ -94,7 +94,7 @@ describe("TDS – Test-Driven State", () => {
 
   test("bypassing side-effect-inducing code", async () => {
     const SideEffect = new Program([
-      new Trace() //
+      new Trace("trace") //
         .step("@")
         .step("no side-effect")
         .step("side-effect", { bypass: true, output: { a: 1 } })
@@ -145,7 +145,7 @@ describe("TDS – Test-Driven State", () => {
   test("execute arbitrary logic during the verification process", async () => {
     const fn = jest.fn();
     const X = new Program([
-      new Trace() //
+      new Trace("trace") //
         .step("@")
         .step("x")
         .call(fn)
@@ -172,7 +172,7 @@ describe("TDS – Test-Driven State", () => {
   describe("edge cases", () => {
     test("no transition", async () => {
       const NoTransition = new Program([
-        new Trace() //
+        new Trace("trace") //
           .step("@")
           .step("no transition"),
       ]);
@@ -189,7 +189,7 @@ describe("TDS – Test-Driven State", () => {
 
     test("no transition", async () => {
       const NoTransition = new Program([
-        new Trace() //
+        new Trace("trace") //
           .step("@")
           .step("no transition"),
       ]);
@@ -206,7 +206,7 @@ describe("TDS – Test-Driven State", () => {
 
     test('expected output "a" but got "b"', async () => {
       const ExpectedOutput = new Program([
-        new Trace() //
+        new Trace("trace") //
           .step("@")
           .step("expected output", { output: { a: 1 } }),
       ]);
@@ -226,7 +226,7 @@ describe("TDS – Test-Driven State", () => {
 
     test("last to bypass", async () => {
       const LastToBypass = new Program([
-        new Trace() //
+        new Trace("trace") //
           .step("@")
           .step("last to bypass", { bypass: true }),
       ]);
