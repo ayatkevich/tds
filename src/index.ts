@@ -104,6 +104,7 @@ export class Program<const Trace extends AnyTrace> {
 
   constructor(public traces: Trace[]) {}
 
+  /** Generates a state diagram from the traces in the program. */
   chart(options = { distinct: false }) {
     const result = ["stateDiagram-v2"];
     const uniqueStates = new Set<string>();
@@ -166,6 +167,7 @@ export type FnInput<T, From, To> = Simplify<
   UnionToIntersection<T extends InferredTransition<Any<From>, Any<To>, infer I, any> ? I : never>
 >;
 
+/** Represents a transition from one state to another. */
 class Transition {
   tag = "transition" as const;
   constructor(
