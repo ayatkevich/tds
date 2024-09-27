@@ -169,6 +169,27 @@ describe("TDS – Test-Driven State", () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
+  test("return Promise.race in transition", async () => {
+    const X = new Program([
+      new Trace("trace").step("@").step("x").step("y"),
+      new Trace("trace").step("@").step("x").step("z"),
+    ]);
+    new Implementation(X).transition("@", "x", async () => {
+      return await Promise.race([
+        Promise.resolve().then(() => ["y"] as const),
+        Promise.resolve().then(() => ["z"] as const),
+      ]);
+    });
+    // @ts-expect-error
+    new Implementation(X).transition("@", "x", async () => {
+      return await Promise.race([
+        Promise.resolve().then(() => ["y"] as const),
+        Promise.resolve().then(() => ["z"] as const),
+        Promise.resolve().then(() => ["foobar"] as const),
+      ]);
+    });
+  });
+
   describe("edge cases", () => {
     test("no transition", async () => {
       const NoTransition = new Program([
