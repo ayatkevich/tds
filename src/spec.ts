@@ -190,6 +190,67 @@ describe("TDS – Test-Driven State", () => {
     });
   });
 
+  describe("test reporting", () => {
+    test("passing test", async () => {
+      const X = new Program([new Trace("trace").step("@").step("x")]);
+      const x = new Implementation(X).transition("@", "x", async () => ["@"]);
+      await x.test();
+    });
+
+    test('failing test with message "No transition from @ to x"', async () => {
+      const X = new Program([new Trace("trace").step("@").step("x").step("y")]);
+      const x = new Implementation(X);
+      await expect(x.test()).rejects.toThrow(
+        [
+          //
+          "Trace: trace",
+          "  🟥 x",
+          "    No transition from @ to x",
+          "  ⬜ y",
+        ].join("\n"),
+      );
+    });
+
+    test('failing test with message "Expected output {"x":1}, got {}"', async () => {
+      const X = new Program([
+        new Trace("trace") //
+          .step("@")
+          .call(() => {})
+          .step("x", { output: { x: 1 } }),
+      ]);
+      const x = new Implementation(X).transition("@", "x", async () => ["@", {}]);
+      await expect(x.test()).rejects.toThrow(
+        [
+          //
+          "Trace: trace",
+          "  🟥 x",
+          '    Expected output {"x":1}, got {}',
+        ].join("\n"),
+      );
+    });
+
+    test("failing test with multiple traces", async () => {
+      const X = new Program([
+        new Trace("trace 1") //
+          .step("@")
+          .step("x"),
+
+        new Trace("trace 2").step("@").step("y"),
+      ]);
+      const x = new Implementation(X).transition("@", "x", async () => ["@"]);
+      await expect(x.test()).rejects.toThrow(
+        [
+          //
+          "Trace: trace 1",
+          "  🟩 x",
+          "Trace: trace 2",
+          "  🟥 y",
+          "    No transition from @ to y",
+        ].join("\n"),
+      );
+    });
+  });
+
   describe("edge cases", () => {
     test("no transition", async () => {
       const NoTransition = new Program([
