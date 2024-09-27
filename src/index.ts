@@ -104,7 +104,7 @@ export class Program<const Trace extends AnyTrace> {
 
   constructor(public traces: Trace[]) {}
 
-  chart() {
+  chart(options = { distinct: false }) {
     const result = ["stateDiagram-v2"];
     const uniqueStates = new Set<string>();
     const transitions = [];
@@ -125,6 +125,9 @@ export class Program<const Trace extends AnyTrace> {
       const fromIndex = states.findIndex((state) => state === from) + 1;
       const toIndex = states.findIndex((state) => state === to) + 1;
       result.push(`  ${fromIndex || "[*]"} --> ${toIndex}`);
+    }
+    if (options.distinct) {
+      return Array.from(new Set(result)).join("\n");
     }
     return result.join("\n");
   }

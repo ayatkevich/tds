@@ -253,7 +253,7 @@ describe("TDS – Test-Driven State", () => {
   });
 
   describe("chart generation", () => {
-    test("every trace", () => {
+    test("every trace", async () => {
       const X = new Program([
         new Trace("trace 1") //
           .step("@")
@@ -278,6 +278,36 @@ describe("TDS – Test-Driven State", () => {
           "  1 --> 2",
           "  2 --> 3",
           "  [*] --> 1",
+          "  1 --> 1",
+          "  1 --> 3",
+        ].join("\n"),
+      );
+    });
+
+    test("distinct transitions only", async () => {
+      const X = new Program([
+        new Trace("trace 1") //
+          .step("@")
+          .step("x")
+          .call(() => {})
+          .step("y")
+          .step("z"),
+        new Trace("trace 2") //
+          .step("@")
+          .step("x")
+          .step("x")
+          .step("z"),
+      ]);
+      expect(X.chart({ distinct: true })).toEqual(
+        [
+          //
+          "stateDiagram-v2",
+          "  1: x",
+          "  2: y",
+          "  3: z",
+          "  [*] --> 1",
+          "  1 --> 2",
+          "  2 --> 3",
           "  1 --> 1",
           "  1 --> 3",
         ].join("\n"),
