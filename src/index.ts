@@ -259,7 +259,6 @@ export class Implementation<const Program extends AnyProgram> {
   async test(program: Program = this.program) {
     const report = await this.verify(program);
     if (!report.every((step) => step.kind === "pass")) {
-      this.transitions;
       const message = [""];
       for (const trace of program.traces) {
         message.push(`Trace: ${trace.name}`);
