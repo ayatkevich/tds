@@ -252,6 +252,39 @@ describe("TDS – Test-Driven State", () => {
     });
   });
 
+  describe("chart generation", () => {
+    test("every trace", () => {
+      const X = new Program([
+        new Trace("trace 1") //
+          .step("@")
+          .step("x")
+          .call(() => {})
+          .step("y")
+          .step("z"),
+        new Trace("trace 2") //
+          .step("@")
+          .step("x")
+          .step("x")
+          .step("z"),
+      ]);
+      expect(X.chart()).toEqual(
+        [
+          //
+          "stateDiagram-v2",
+          "  1: x",
+          "  2: y",
+          "  3: z",
+          "  [*] --> 1",
+          "  1 --> 2",
+          "  2 --> 3",
+          "  [*] --> 1",
+          "  1 --> 1",
+          "  1 --> 3",
+        ].join("\n"),
+      );
+    });
+  });
+
   describe("edge cases", () => {
     test("no transition", async () => {
       const NoTransition = new Program([

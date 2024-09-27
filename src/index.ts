@@ -103,6 +103,31 @@ export class Program<const Trace extends AnyTrace> {
   tag = "program" as const;
 
   constructor(public traces: Trace[]) {}
+
+  chart() {
+    const result = ["stateDiagram-v2"];
+    const uniqueStates = new Set<string>();
+    const transitions = [];
+    for (const trace of this.traces) {
+      for (const [i, step] of Object.entries(trace.steps)) {
+        if (step instanceof Call) continue;
+        const next = trace.steps.slice(Number(i) + 1).find((step) => step instanceof Step)?.name;
+        if (next) transitions.push([step.name === "@" ? "[*]" : step.name, next]);
+        if (step.name === "@") continue;
+        uniqueStates.add(step.name);
+      }
+    }
+    const states = Array.from(uniqueStates);
+    for (const [i, state] of Object.entries(states)) {
+      result.push(`  ${Number(i) + 1}: ${state}`);
+    }
+    for (const [from, to] of transitions) {
+      const fromIndex = states.findIndex((state) => state === from) + 1;
+      const toIndex = states.findIndex((state) => state === to) + 1;
+      result.push(`  ${fromIndex || "[*]"} --> ${toIndex}`);
+    }
+    return result.join("\n");
+  }
 }
 
 /** T in category of (*) */
