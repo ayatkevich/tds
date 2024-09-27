@@ -218,6 +218,7 @@ describe("TDS – Test-Driven State", () => {
           .call(() => {})
           .step("x", { output: { x: 1 } }),
       ]);
+      // @ts-expect-error
       const x = new Implementation(X).transition("@", "x", async () => ["@", {}]);
       await expect(x.test()).rejects.toThrow(
         [
