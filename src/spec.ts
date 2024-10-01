@@ -358,7 +358,7 @@ describe("TDS – Test-Driven State", () => {
       ]);
 
       const expectedOutput = new Implementation(ExpectedOutput) // @ts-expect-error
-        .transition("@", "expected output", async () => ["@", {}]);
+        .state("expected output", async () => ["@", {}]);
 
       expect(await expectedOutput.verify()).toEqual([
         expect.objectContaining({

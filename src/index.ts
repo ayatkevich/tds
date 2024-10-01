@@ -201,6 +201,17 @@ export class Implementation<const Program extends AnyProgram> {
     return new Implementation(this.program, this.transitions.concat(new Transition(from, to, fn)));
   }
 
+  /** Adds a state handler. Syntactic sugar for transition('*', to) */
+  state<const To extends "*" | ToState<InferTransitions<Program>, "*">>(
+    to: To & string,
+    fn: (
+      input: FnInput<InferTransitions<Program>, "*", To>,
+      transition: { from: string; to: string },
+    ) => Promisable<FnOutput<InferTransitions<Program>, "*", To>>,
+  ) {
+    return new Implementation(this.program, this.transitions.concat(new Transition("*", to, fn)));
+  }
+
   /** Finds a transition from one state to another. */
   findTransition(from: string, to: string) {
     return this.transitions.find(
