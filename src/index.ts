@@ -102,29 +102,34 @@ export type AnyProgram = Program<AnyTrace>;
 export class Program<const Trace extends AnyTrace> {
   tag = "program" as const;
 
-  constructor(public traces: Trace[]) {}
+  transitions: [string, string][] = [];
+  states: string[] = [];
 
-  /** Generates a state diagram from the traces in the program. */
-  chart(options = { distinct: false }) {
-    const result = ["stateDiagram-v2"];
+  constructor(public traces: Trace[]) {
     const uniqueStates = new Set<string>();
     const transitions = [];
     for (const trace of this.traces) {
       for (const [i, step] of Object.entries(trace.steps)) {
         if (step instanceof Call) continue;
         const next = trace.steps.slice(Number(i) + 1).find((step) => step instanceof Step)?.name;
-        if (next) transitions.push([step.name === "@" ? "[*]" : step.name, next]);
+        if (next) transitions.push([step.name, next]);
         if (step.name === "@") continue;
         uniqueStates.add(step.name);
       }
     }
-    const states = Array.from(uniqueStates);
-    for (const [i, state] of Object.entries(states)) {
+    this.transitions = transitions as [string, string][];
+    this.states = Array.from(uniqueStates);
+  }
+
+  /** Generates a state diagram from the traces in the program. */
+  chart(options = { distinct: false }) {
+    const result = ["stateDiagram-v2"];
+    for (const [i, state] of Object.entries(this.states)) {
       result.push(`  ${Number(i) + 1}: ${state}`);
     }
-    for (const [from, to] of transitions) {
-      const fromIndex = states.findIndex((state) => state === from) + 1;
-      const toIndex = states.findIndex((state) => state === to) + 1;
+    for (const [from, to] of this.transitions) {
+      const fromIndex = this.states.findIndex((state) => state === from) + 1;
+      const toIndex = this.states.findIndex((state) => state === to) + 1;
       result.push(`  ${fromIndex || "[*]"} --> ${toIndex}`);
     }
     if (options.distinct) {
