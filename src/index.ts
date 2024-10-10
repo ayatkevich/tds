@@ -221,15 +221,23 @@ export class Implementation<const Program extends AnyProgram> {
     );
   }
 
+  /** Executes a program from one state to another, with an initial input. */
+  async execute<
+    const From extends "*" | FromState<Program>,
+    const To extends "*" | ToState<InferTransitions<Program>, From>,
+  >(from: From & string, to: To & string, input?: any) {
+    const transition = this.findTransition(from, to);
+    if (!transition) throw new Error(`No transition from ${from} to ${to}`);
+    return await transition.fn(input, { from, to });
+  }
+
   /** Runs a program from one state to another, with an initial input. */
   async run<
     const From extends InferTransitions<Program>["from"],
     const To extends ToState<InferTransitions<Program>, From>,
   >(from: From & string, to: To & string, input: any) {
     while (to !== "@") {
-      const transition = this.findTransition(from, to);
-      if (!transition) throw new Error(`No transition from ${from} to ${to}`);
-      var [next, output] = await transition.fn(input, { from, to });
+      var [next, output] = await this.execute(from, to, input);
       [from, to] = [to as From & string, next];
       input = output;
     }

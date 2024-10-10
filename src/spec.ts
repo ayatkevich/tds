@@ -190,6 +190,27 @@ describe("TDS – Test-Driven State", () => {
     });
   });
 
+  test("execute just one transition", async () => {
+    const nothingToX = jest.fn();
+    const xToY = jest.fn();
+
+    const X = new Program([new Trace("trace").step("@").step("x").step("y")]);
+    const x = new Implementation(X)
+      .transition("@", "x", async () => {
+        nothingToX();
+        return ["y"];
+      })
+      .transition("x", "y", async () => {
+        xToY();
+        return ["@"];
+      });
+
+    await x.execute("@", "x");
+
+    expect(nothingToX).toHaveBeenCalledTimes(1);
+    expect(xToY).toHaveBeenCalledTimes(0);
+  });
+
   describe("test reporting", () => {
     test("passing test", async () => {
       const X = new Program([new Trace("trace").step("@").step("x")]);
