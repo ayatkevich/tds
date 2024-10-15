@@ -11,7 +11,7 @@ export interface StepOptions {
 export type AnyStep = Step<any, any>;
 
 /** Represents a single step in a trace. */
-class Step<const Name extends string, Options extends StepOptions> {
+export class Step<const Name extends string, Options extends StepOptions> {
   tag = "step" as const;
 
   constructor(
@@ -20,7 +20,7 @@ class Step<const Name extends string, Options extends StepOptions> {
   ) {}
 }
 
-class Call {
+export class Call {
   tag = "call" as const;
   constructor(public fn: () => Promisable<any>) {}
 }
