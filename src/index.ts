@@ -46,9 +46,9 @@ export class Trace<const Steps extends [] | [...(AnyStep | Call)[]] = []> {
 
   step<const Name extends string, Options extends StepOptions = {}>(
     name: Name,
-    options: Options = {} as Options,
+    getOptions: () => Options = () => ({}) as Options,
   ): Trace<[...Steps, Step<Name, Options>]> {
-    return new Trace(this.name, [...this.steps, new Step(name, options)]);
+    return new Trace(this.name, [...this.steps, new Step(name, getOptions())]);
   }
 
   call(fn: () => Promisable<any>): Trace<[...Steps, Call]> {

@@ -7,19 +7,19 @@ describe("TDS – Test-Driven State", () => {
       /** A factorial program can be represented as a union of three traces: */
 
       Trace.with("n = 0", { n: 0 }) // reads as: for n = 0, the output is n = 1
-        .step("calculate", { output: { n: 1 } }),
+        .step("calculate", () => ({ output: { n: 1 } })),
 
       Trace.with("n = 1", { n: 1 }) // reads as: for n = 1, the output is n = 1 after one step
-        .step("calculate", { output: { n: 0, a: 1 } })
-        .step("calculate", { output: { n: 1 } }),
+        .step("calculate", () => ({ output: { n: 0, a: 1 } }))
+        .step("calculate", () => ({ output: { n: 1 } })),
 
       Trace.with("n = 5", { n: 5 }) // reads as: for n = 5, the output is n = 120 after five steps
-        .step("calculate", { output: { n: 4, a: 5 } })
-        .step("calculate", { output: { n: 3, a: 20 } })
-        .step("calculate", { output: { n: 2, a: 60 } })
-        .step("calculate", { output: { n: 1, a: 120 } })
-        .step("calculate", { output: { n: 0, a: 120 } })
-        .step("calculate", { output: { n: 120 } }),
+        .step("calculate", () => ({ output: { n: 4, a: 5 } }))
+        .step("calculate", () => ({ output: { n: 3, a: 20 } }))
+        .step("calculate", () => ({ output: { n: 2, a: 60 } }))
+        .step("calculate", () => ({ output: { n: 1, a: 120 } }))
+        .step("calculate", () => ({ output: { n: 0, a: 120 } }))
+        .step("calculate", () => ({ output: { n: 120 } })),
     ]);
 
     /** The factorial program reference can be used indirectly as a type. */
@@ -44,33 +44,33 @@ describe("TDS – Test-Driven State", () => {
   test("fibonacci example - direct use", async () => {
     const Fibonacci = new Program([
       Trace.with("n = 0", { n: 0 }) //
-        .step("calculate", { output: { n: 0 } }),
+        .step("calculate", () => ({ output: { n: 0 } })),
 
       Trace.with("n = 1", { n: 1 }) //
-        .step("calculate", { output: { n: 1 } }),
+        .step("calculate", () => ({ output: { n: 1 } })),
 
       Trace.with("n = 2", { n: 2 }) //
-        .step("calculate", { output: { n: 1, a: 1, b: 1 } })
-        .step("calculate", { output: { n: 1 } }),
+        .step("calculate", () => ({ output: { n: 1, a: 1, b: 1 } }))
+        .step("calculate", () => ({ output: { n: 1 } })),
 
       Trace.with("n = 5", { n: 5 }) //
-        .step("calculate", { output: { n: 4, a: 1, b: 1 } })
-        .step("calculate", { output: { n: 3, a: 2, b: 1 } })
-        .step("calculate", { output: { n: 2, a: 3, b: 2 } })
-        .step("calculate", { output: { n: 1, a: 5, b: 3 } })
-        .step("calculate", { output: { n: 5 } }),
+        .step("calculate", () => ({ output: { n: 4, a: 1, b: 1 } }))
+        .step("calculate", () => ({ output: { n: 3, a: 2, b: 1 } }))
+        .step("calculate", () => ({ output: { n: 2, a: 3, b: 2 } }))
+        .step("calculate", () => ({ output: { n: 1, a: 5, b: 3 } }))
+        .step("calculate", () => ({ output: { n: 5 } })),
 
       Trace.with("n = 10", { n: 10 }) //
-        .step("calculate", { output: { n: 9, a: 1, b: 1 } })
-        .step("calculate", { output: { n: 8, a: 2, b: 1 } })
-        .step("calculate", { output: { n: 7, a: 3, b: 2 } })
-        .step("calculate", { output: { n: 6, a: 5, b: 3 } })
-        .step("calculate", { output: { n: 5, a: 8, b: 5 } })
-        .step("calculate", { output: { n: 4, a: 13, b: 8 } })
-        .step("calculate", { output: { n: 3, a: 21, b: 13 } })
-        .step("calculate", { output: { n: 2, a: 34, b: 21 } })
-        .step("calculate", { output: { n: 1, a: 55, b: 34 } })
-        .step("calculate", { output: { n: 55 } }),
+        .step("calculate", () => ({ output: { n: 9, a: 1, b: 1 } }))
+        .step("calculate", () => ({ output: { n: 8, a: 2, b: 1 } }))
+        .step("calculate", () => ({ output: { n: 7, a: 3, b: 2 } }))
+        .step("calculate", () => ({ output: { n: 6, a: 5, b: 3 } }))
+        .step("calculate", () => ({ output: { n: 5, a: 8, b: 5 } }))
+        .step("calculate", () => ({ output: { n: 4, a: 13, b: 8 } }))
+        .step("calculate", () => ({ output: { n: 3, a: 21, b: 13 } }))
+        .step("calculate", () => ({ output: { n: 2, a: 34, b: 21 } }))
+        .step("calculate", () => ({ output: { n: 1, a: 55, b: 34 } }))
+        .step("calculate", () => ({ output: { n: 55 } })),
     ]);
 
     /** The fibonacci program reference can be used indirectly as a type. */
@@ -97,7 +97,7 @@ describe("TDS – Test-Driven State", () => {
       new Trace("trace") //
         .step("@")
         .step("no side-effect")
-        .step("side-effect", { bypass: true, output: { a: 1 } })
+        .step("side-effect", () => ({ bypass: true, output: { a: 1 } }))
         .step("no side-effect"),
     ]);
 
@@ -251,7 +251,7 @@ describe("TDS – Test-Driven State", () => {
         new Trace("trace") //
           .step("@")
           .call(() => {})
-          .step("x", { output: { x: 1 } }),
+          .step("x", () => ({ output: { x: 1 } })),
       ]);
       // @ts-expect-error
       const x = new Implementation(X).transition("@", "x", async () => ["@", {}]);
@@ -389,7 +389,7 @@ describe("TDS – Test-Driven State", () => {
       const ExpectedOutput = new Program([
         new Trace("trace") //
           .step("@")
-          .step("expected output", { output: { a: 1 } }),
+          .step("expected output", () => ({ output: { a: 1 } })),
       ]);
 
       const expectedOutput = new Implementation(ExpectedOutput) // @ts-expect-error
@@ -409,7 +409,7 @@ describe("TDS – Test-Driven State", () => {
       const LastToBypass = new Program([
         new Trace("trace") //
           .step("@")
-          .step("last to bypass", { bypass: true }),
+          .step("last to bypass", () => ({ bypass: true })),
       ]);
 
       const lastToBypass = new Implementation(LastToBypass) //
