@@ -1,4 +1,4 @@
-import type { Promisable, Simplify, UnionToIntersection } from "type-fest";
+import type { Promisable, SharedUnionFieldsDeep, Simplify } from "type-fest";
 
 /** Represents the options that can be attached to a step. */
 export interface StepOptions {
@@ -169,7 +169,10 @@ export type FnOutput<T, From, To> = readonly [
 
 /** Represents the input of a transition function. */
 export type FnInput<T, From, To> = Simplify<
-  UnionToIntersection<T extends InferredTransition<Any<From>, Any<To>, infer I, any> ? I : never>
+  SharedUnionFieldsDeep<
+    T extends InferredTransition<Any<From>, Any<To>, infer I, any> ? I : never,
+    { recurseIntoArrays: true }
+  >
 >;
 
 /** Represents a transition from one state to another. */
