@@ -189,6 +189,9 @@ class Transition {
 export class Implementation<const Program extends AnyProgram> {
   tag = "implementation" as const;
 
+  /** The current state of the implementation. */
+  currentState = "@";
+
   constructor(
     public program: Program = undefined as unknown as Program,
     public transitions: Transition[] = [],
@@ -236,6 +239,7 @@ export class Implementation<const Program extends AnyProgram> {
   >(from: From & string, to: To & string, input?: any) {
     const transition = this.findTransition(from, to);
     if (!transition) throw new Error(`No transition from ${from} to ${to}`);
+    this.currentState = to;
     return await transition.fn(input, { from, to });
   }
 

@@ -225,6 +225,17 @@ describe("TDS – Test-Driven State", () => {
     expect(X.states).toEqual(["x", "y", "z"]);
   });
 
+  test("current state", async () => {
+    const x = new Implementation(
+      new Program([new Trace("trace").step("@").step("x").step("y")]),
+    ).transition("*", "*", async () => {
+      return ["@"];
+    });
+    expect(x.currentState).toEqual("@");
+    await x.execute("@", "x");
+    expect(x.currentState).toEqual("x");
+  });
+
   describe("test reporting", () => {
     test("passing test", async () => {
       const X = new Program([new Trace("trace").step("@").step("x")]);
