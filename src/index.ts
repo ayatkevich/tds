@@ -5,6 +5,7 @@ export interface StepOptions {
   /** The desired output of the transition to this step. */
   output?: object;
   bypass?: boolean;
+  resolve?: () => Promisable<void>;
 }
 
 /** Represents any step in a trace. */
@@ -289,7 +290,9 @@ export class Implementation<const Program extends AnyProgram> {
         }
 
         if (!step.options.bypass) {
-          var [next, output] = await transition.fn(input, { from, to });
+          const promise = transition.fn(input, { from, to });
+          await step.options.resolve?.();
+          var [next, output] = await promise;
           if (step.options.output && !deepEqual(output, step.options.output)) {
             report.push({
               kind: "fail",

@@ -236,6 +236,34 @@ describe("TDS – Test-Driven State", () => {
     expect(x.currentState).toEqual("x");
   });
 
+  test("resolve async transition with a helper function", async () => {
+    let callback: any;
+    const on = (fn: any) => (callback = fn);
+
+    const X = new Program([
+      new Trace("trace")
+        .step("@")
+
+        .step("x", () => ({
+          resolve() {
+            callback?.();
+          },
+        }))
+        .step("y"),
+    ]);
+
+    const x = new Implementation(X)
+      .transition("@", "x", async () => {
+        await new Promise((resolve) => on(resolve));
+        return ["y"];
+      })
+      .transition("x", "y", async () => {
+        return ["@"];
+      });
+
+    await x.test();
+  });
+
   describe("test reporting", () => {
     test("passing test", async () => {
       const X = new Program([new Trace("trace").step("@").step("x")]);
